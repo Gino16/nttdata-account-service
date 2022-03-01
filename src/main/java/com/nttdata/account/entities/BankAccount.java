@@ -20,7 +20,9 @@ public class BankAccount {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long commision;
+    private Long commission;
+
+    private Long quantity;
 
     private Integer movement_quant;
 

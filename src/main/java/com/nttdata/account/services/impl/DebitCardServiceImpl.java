@@ -14,26 +14,30 @@ import java.util.List;
 public class DebitCardServiceImpl implements DebitCardService {
 
     @Autowired
-    private DebitCardRepository repository;
-
-    @Autowired
-    private CustomerClient customerClient;
-
-    public Customer findCustomerById(Long id){
-        return customerClient.findOneById(id);
-    }
+    private DebitCardRepository debitCardRepository;
 
     @Autowired
     private CustomerClient customerRepository;
 
+    public Customer findCustomerById(Long id){
+        return customerRepository.findOneById(id);
+    }
+
+
     @Override
     public List<DebitCard> findAll() {
-        return repository.findAll();
+        return debitCardRepository.findAll();
     }
 
     @Override
+    public List<DebitCard> findAllByIdCustomer(Long id){
+        return debitCardRepository.findAllByCustomers(id);
+    }
+
+
+    @Override
     public DebitCard findOneById(Long id) {
-        DebitCard debitCard = repository.findById(id).orElse(null);
+        DebitCard debitCard = debitCardRepository.findById(id).orElse(null);
 
         Customer customer = customerRepository.findOneById(debitCard.getIdCustomer());
 
@@ -52,7 +56,7 @@ public class DebitCardServiceImpl implements DebitCardService {
             return null;
         }
 
-        return repository.save(debitCard);
+        return debitCardRepository.save(debitCard);
     }
 
     @Override
@@ -62,11 +66,11 @@ public class DebitCardServiceImpl implements DebitCardService {
             return null;
 
         newCard.setNumber(debitCard.getNumber());
-        return repository.save(newCard);
+        return debitCardRepository.save(newCard);
     }
 
     @Override
     public void delete(Long id) {
-        repository.deleteById(id);
+        debitCardRepository.deleteById(id);
     }
 }

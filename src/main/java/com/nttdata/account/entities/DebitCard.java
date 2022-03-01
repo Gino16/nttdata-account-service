@@ -30,4 +30,16 @@ public class DebitCard {
 
     @Transient
     private Customer customer;
+
+    public void deposit(Long quantity){
+        Long actualMoney = this.bankAccount.getQuantity();
+        actualMoney += quantity;
+        this.bankAccount.setQuantity(actualMoney);
+    }
+
+    public void withdrawal(Long quantity){
+        Long actualMoney = this.bankAccount.getQuantity();
+        actualMoney -= quantity;
+        this.bankAccount.setQuantity(actualMoney);
+    }
 }

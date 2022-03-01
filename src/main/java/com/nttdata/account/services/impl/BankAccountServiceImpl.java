@@ -33,7 +33,7 @@ public class BankAccountServiceImpl implements BankAccountService {
     @Override
     public BankAccount edit(Long id, BankAccount bankAccount) {
         BankAccount newBankAccount = this.findOneById(id);
-        newBankAccount.setCommision(bankAccount.getCommision());
+        newBankAccount.setCommission(bankAccount.getCommission());
         newBankAccount.setMovement_limit(bankAccount.getMovement_limit());
         return newBankAccount;
     }

@@ -11,6 +11,8 @@ public interface DebitCardService {
 
     public List<DebitCard> findAll();
 
+    public List<DebitCard> findAllByIdCustomer(Long id);
+
     public DebitCard findOneById(Long id);
 
     public DebitCard create(DebitCard debitCard);

@@ -26,6 +26,8 @@ public class AccountTransaction {
     @Temporal(TemporalType.TIMESTAMP)
     private Date date;
 
+    private String concept;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnoreProperties(value = {"applications", "hibernateLazyInitializer"})
     private AccountTransaction accountTransaction;
