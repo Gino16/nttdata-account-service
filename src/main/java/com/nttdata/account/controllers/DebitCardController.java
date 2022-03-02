@@ -1,9 +1,10 @@
 package com.nttdata.account.controllers;
 
-import com.nttdata.account.entities.AccountType;
+import com.nttdata.account.entities.AccountTransaction;
 import com.nttdata.account.entities.BankAccount;
 import com.nttdata.account.entities.Customer;
 import com.nttdata.account.entities.DebitCard;
+import com.nttdata.account.services.AccountTransactionService;
 import com.nttdata.account.services.BankAccountService;
 import com.nttdata.account.services.DebitCardService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,8 +12,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @RestController
@@ -24,6 +27,9 @@ public class DebitCardController {
 
     @Autowired
     private BankAccountService bankAccountService;
+
+    @Autowired
+    private AccountTransactionService accountTransactionService;
 
     @GetMapping("/")
     public ResponseEntity<List<DebitCard>> list() {
@@ -44,6 +50,9 @@ public class DebitCardController {
 
         Customer customer = debitCardService.findCustomerById(debitCard.getIdCustomer());
         BankAccount bankAccount = bankAccountService.findOneById(debitCard.getBankAccount().getId());
+
+        List<DebitCard> cards = debitCardService.findAllByIdCustomer(customer.getId());
+
         if (customer == null) {
             return ResponseEntity.badRequest().build();
         }
@@ -51,6 +60,30 @@ public class DebitCardController {
         if (Objects.equals(customer.getCustomerType().getName(), "Empresarial")) {
             if (!Objects.equals(bankAccount.getAccountType().getName(), "cuenta corriente")) {
                 return ResponseEntity.badRequest().build();
+            }
+        } else if (Objects.equals(customer.getCustomerType().getName(), "Personal")) {
+            if (!cards.isEmpty()) {
+                AtomicInteger quantSavingAccounts = new AtomicInteger();
+                AtomicInteger quantCurrentAndFixedTermAccount = new AtomicInteger();
+                cards.forEach((card) -> {
+                    if (Objects.equals(card.getBankAccount().getAccountType().getName(), "ahorro")) {
+                        quantSavingAccounts.getAndIncrement();
+                    } else {
+                        quantCurrentAndFixedTermAccount.getAndIncrement();
+                    }
+                });
+
+                if (quantSavingAccounts.get() >= 1 && quantCurrentAndFixedTermAccount.get() >= 1) {
+                    return ResponseEntity.badRequest().build();
+                }
+
+                if (Objects.equals(bankAccount.getAccountType().getName(), "ahorro") && quantSavingAccounts.get() >= 1) {
+                    return ResponseEntity.badRequest().build();
+                }
+
+                if (!Objects.equals(bankAccount.getAccountType().getName(), "ahorro") && quantCurrentAndFixedTermAccount.get() >= 1) {
+                    return ResponseEntity.badRequest().build();
+                }
             }
         }
 
@@ -75,10 +108,9 @@ public class DebitCardController {
     }
 
 
+    // transaction -> 1 = deposit, 2 = withdrawal
     @GetMapping("/customer/{id}/account/{idAccount}/transaction/{transaction}/{quantity}")
-    public ResponseEntity<?> transaction(@PathVariable Long id, @PathVariable Long idAccount, @PathVariable Long transaction, @PathVariable Long quantity) {
-
-        // transaction -> 1 = deposit, 2 = withdrawal
+    public ResponseEntity<?> transaction(@PathVariable Long id, @PathVariable Long idAccount, @PathVariable Long transaction, @PathVariable Double quantity) {
 
         Customer customer = debitCardService.findCustomerById(id);
         if (customer == null) {
@@ -100,18 +132,42 @@ public class DebitCardController {
 
         DebitCard card = cardOwners.get(0);
 
+        if (card.getBankAccount().getMovementLimit() > 0 && card.getBankAccount().getMovementQuant() >= card.getBankAccount().getMovementLimit()) {
+            return ResponseEntity.badRequest().build();
+        }
+
         if (transaction == 1) {
             card.deposit(quantity);
-        } else if (transaction == 2 && card.getBankAccount().getQuantity() >= quantity) {
+        } else if (transaction == 2 && card.getBankAccount().getCurrentBalance() >= quantity) {
             card.withdrawal(quantity);
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
+        card.getBankAccount().setMovementQuant(card.getBankAccount().getMovementQuant() + 1);
+
+
+        // registro de movimiento
+        AccountTransaction accountTransaction = new AccountTransaction();
+        accountTransaction.setConcept(transaction == 1 ? "Deposit" : "Withdrawal");
+        accountTransaction.setAmount(quantity);
+        accountTransaction.setDate(new Date());
+        accountTransaction.setBankAccount(card.getBankAccount());
 
         debitCardService.create(card);
+        accountTransactionService.save(accountTransaction);
 
         return ResponseEntity.ok(card);
 
+    }
+
+    @GetMapping("/history/debit-card/{idDebitCard}")
+    public ResponseEntity<List<AccountTransaction>> history(@PathVariable Long idDebitCard) {
+        DebitCard debitCard = this.debitCardService.findOneById(idDebitCard);
+        if (debitCard == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        List<AccountTransaction> accountTransactions = this.accountTransactionService.findAllByBankAccountId(debitCard.getBankAccount().getId());
+        return ResponseEntity.ok(accountTransactions);
     }
 }

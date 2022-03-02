@@ -18,5 +18,5 @@ public interface BankAccountService {
 
     public List<AccountType> findAllAccountTypes();
 
-
+    public AccountType searchAccountTypeById(Long id);
 }

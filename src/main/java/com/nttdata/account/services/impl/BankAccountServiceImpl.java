@@ -33,8 +33,6 @@ public class BankAccountServiceImpl implements BankAccountService {
     @Override
     public BankAccount edit(Long id, BankAccount bankAccount) {
         BankAccount newBankAccount = this.findOneById(id);
-        newBankAccount.setCommission(bankAccount.getCommission());
-        newBankAccount.setMovement_limit(bankAccount.getMovement_limit());
         return newBankAccount;
     }
 
@@ -46,5 +44,10 @@ public class BankAccountServiceImpl implements BankAccountService {
     @Override
     public List<AccountType> findAllAccountTypes() {
         return repository.listAccountType();
+    }
+
+    @Override
+    public AccountType searchAccountTypeById(Long id) {
+        return repository.searchAccountTypeById(id);
     }
 }

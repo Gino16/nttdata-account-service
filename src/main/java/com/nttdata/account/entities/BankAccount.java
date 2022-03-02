@@ -20,13 +20,13 @@ public class BankAccount {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long commission;
+    private Double commission;
 
-    private Long quantity;
+    private Double currentBalance;
 
-    private Integer movement_quant;
+    private Integer movementQuant;
 
-    private Integer movement_limit;
+    private Integer movementLimit;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnoreProperties(value = {"applications", "hibernateLazyInitializer"})

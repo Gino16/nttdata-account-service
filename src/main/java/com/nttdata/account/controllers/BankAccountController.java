@@ -18,28 +18,47 @@ public class BankAccountController {
     private BankAccountService bankAccountService;
 
     @GetMapping("/")
-    public ResponseEntity<List<BankAccount>> list(){
+    public ResponseEntity<List<BankAccount>> list() {
         return ResponseEntity.ok(bankAccountService.findAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<BankAccount> findOneById(@PathVariable Long id){
+    public ResponseEntity<BankAccount> findOneById(@PathVariable Long id) {
         BankAccount bankAccount = bankAccountService.findOneById(id);
-        if (bankAccount == null){
+        if (bankAccount == null) {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(bankAccount);
     }
 
     @PostMapping("/")
-    public ResponseEntity<BankAccount> create(@RequestBody BankAccount bankAccount){
+    public ResponseEntity<BankAccount> create(@RequestBody BankAccount bankAccount) {
+        AccountType accountType = bankAccountService.searchAccountTypeById(bankAccount.getAccountType().getId());
+
+        switch (accountType.getName()) {
+            case "ahorro":
+                bankAccount.setCommission(0.0);
+                bankAccount.setMovementLimit(3);
+                break;
+            case "cuenta corriente":
+                bankAccount.setCommission(12.0);
+                bankAccount.setMovementLimit(-1);
+                break;
+            case "plazo fijo":
+                bankAccount.setCommission(0.0);
+                bankAccount.setMovementLimit(1);
+                break;
+        }
+
+        bankAccount.setMovementQuant(0);
+        bankAccount.setCurrentBalance(0.0);
         return ResponseEntity.status(HttpStatus.CREATED).body(bankAccountService.create(bankAccount));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<BankAccount> update(@PathVariable Long id, @RequestBody BankAccount bankAccount){
+    public ResponseEntity<BankAccount> update(@PathVariable Long id, @RequestBody BankAccount bankAccount) {
         BankAccount newBankAccount = bankAccountService.edit(id, bankAccount);
-        if (newBankAccount == null){
+        if (newBankAccount == null) {
             return ResponseEntity.badRequest().build();
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(newBankAccount);
@@ -47,12 +66,12 @@ public class BankAccountController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteById(@PathVariable Long id){
+    public void deleteById(@PathVariable Long id) {
         bankAccountService.delete(id);
     }
 
     @GetMapping("/account-types")
-    public List<AccountType> listTypes(){
+    public List<AccountType> listTypes() {
         return bankAccountService.findAllAccountTypes();
     }
 

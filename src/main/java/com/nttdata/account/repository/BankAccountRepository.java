@@ -13,5 +13,5 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
     public List<AccountType> listAccountType();
 
     @Query("SELECT at from AccountType at WHERE at.id = :id")
-    public List<AccountType> searchAccountTypeById(Long id);
+    public AccountType searchAccountTypeById(Long id);
 }
