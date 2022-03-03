@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
 import java.util.Date;
@@ -25,6 +26,7 @@ public class AccountTransaction {
     private Double amount;
 
     @Temporal(TemporalType.TIMESTAMP)
+    @DateTimeFormat(pattern = "DD-MM-YYYY HH:mm:ss")
     private Date date;
 
     private String concept;

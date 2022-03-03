@@ -17,11 +17,13 @@ public class BankAccountController {
     @Autowired
     private BankAccountService bankAccountService;
 
+    // Get All Bank Accounts
     @GetMapping("/")
     public ResponseEntity<List<BankAccount>> list() {
         return ResponseEntity.ok(bankAccountService.findAll());
     }
 
+    // Get One Bank Account By ID
     @GetMapping("/{id}")
     public ResponseEntity<BankAccount> findOneById(@PathVariable Long id) {
         BankAccount bankAccount = bankAccountService.findOneById(id);
@@ -31,10 +33,13 @@ public class BankAccountController {
         return ResponseEntity.ok(bankAccount);
     }
 
+    // Create a new Bank Account
     @PostMapping("/")
     public ResponseEntity<BankAccount> create(@RequestBody BankAccount bankAccount) {
         AccountType accountType = bankAccountService.searchAccountTypeById(bankAccount.getAccountType().getId());
-
+        if (accountType == null){
+            return ResponseEntity.badRequest().build();
+        }
         switch (accountType.getName()) {
             case "ahorro":
                 bankAccount.setCommission(0.0);
@@ -52,24 +57,19 @@ public class BankAccountController {
 
         bankAccount.setMovementQuant(0);
         bankAccount.setCurrentBalance(0.0);
-        return ResponseEntity.status(HttpStatus.CREATED).body(bankAccountService.create(bankAccount));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<BankAccount> update(@PathVariable Long id, @RequestBody BankAccount bankAccount) {
-        BankAccount newBankAccount = bankAccountService.edit(id, bankAccount);
-        if (newBankAccount == null) {
-            return ResponseEntity.badRequest().build();
-        }
+        BankAccount newBankAccount = bankAccountService.save(bankAccount);
         return ResponseEntity.status(HttpStatus.CREATED).body(newBankAccount);
     }
 
+
+    // Delete a Bank Account
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteById(@PathVariable Long id) {
         bankAccountService.delete(id);
     }
 
+    // Get All Account Types
     @GetMapping("/account-types")
     public List<AccountType> listTypes() {
         return bankAccountService.findAllAccountTypes();

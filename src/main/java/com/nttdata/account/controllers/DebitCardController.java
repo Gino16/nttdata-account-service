@@ -31,11 +31,13 @@ public class DebitCardController {
     @Autowired
     private AccountTransactionService accountTransactionService;
 
+    // Get All Debit Card
     @GetMapping("/")
     public ResponseEntity<List<DebitCard>> list() {
         return ResponseEntity.ok(debitCardService.findAll());
     }
 
+    // Get one Debit Card by ID
     @GetMapping("/{id}")
     public ResponseEntity<DebitCard> findOneById(@PathVariable Long id) {
         DebitCard debitCard = debitCardService.findOneById(id);
@@ -45,23 +47,26 @@ public class DebitCardController {
         return ResponseEntity.ok(debitCard);
     }
 
+    // Create a new Debit Card
     @PostMapping("/")
     public ResponseEntity<DebitCard> create(@RequestBody DebitCard debitCard) {
 
         Customer customer = debitCardService.findCustomerById(debitCard.getIdCustomer());
         BankAccount bankAccount = bankAccountService.findOneById(debitCard.getBankAccount().getId());
 
-        List<DebitCard> cards = debitCardService.findAllByIdCustomer(customer.getId());
-
-        if (customer == null) {
+        if (customer == null || bankAccount == null) {
             return ResponseEntity.badRequest().build();
         }
 
+        List<DebitCard> cards = debitCardService.findAllByIdCustomer(customer.getId());
+
+        // Validate if debit card is EMPRESARIAL or PERSONAL
         if (Objects.equals(customer.getCustomerType().getName(), "Empresarial")) {
             if (!Objects.equals(bankAccount.getAccountType().getName(), "cuenta corriente")) {
                 return ResponseEntity.badRequest().build();
             }
         } else if (Objects.equals(customer.getCustomerType().getName(), "Personal")) {
+            // Validate if exist PERSONAL debit cards
             if (!cards.isEmpty()) {
                 AtomicInteger quantSavingAccounts = new AtomicInteger();
                 AtomicInteger quantCurrentAndFixedTermAccount = new AtomicInteger();
@@ -87,11 +92,12 @@ public class DebitCardController {
             }
         }
 
-        DebitCard newDebitCard = debitCardService.create(debitCard);
+        DebitCard newDebitCard = debitCardService.save(debitCard);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(newDebitCard);
     }
 
+    // Update data of Debit Card
     @PutMapping("/{id}")
     public ResponseEntity<DebitCard> update(@PathVariable Long id, @RequestBody DebitCard debitCard) {
         DebitCard debitCardUpdate = debitCardService.edit(id, debitCard);
@@ -101,6 +107,7 @@ public class DebitCardController {
         return ResponseEntity.status(HttpStatus.CREATED).body(debitCardUpdate);
     }
 
+    // Delete a Debit Card
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
@@ -108,11 +115,13 @@ public class DebitCardController {
     }
 
 
+    // Make Transactions and Save History
     // transaction -> 1 = deposit, 2 = withdrawal
-    @GetMapping("/customer/{id}/account/{idAccount}/transaction/{transaction}/{quantity}")
-    public ResponseEntity<?> transaction(@PathVariable Long id, @PathVariable Long idAccount, @PathVariable Long transaction, @PathVariable Double quantity) {
+    @GetMapping("/customer/{id}/id-card/{idDebitCard}/transaction/{transaction}/quantity/{quantity}")
+    public ResponseEntity<?> transaction(@PathVariable Long id, @PathVariable Long idDebitCard, @PathVariable Long transaction, @PathVariable Double quantity) {
 
         Customer customer = debitCardService.findCustomerById(id);
+
         if (customer == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
@@ -123,7 +132,7 @@ public class DebitCardController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
-        List<DebitCard> cardOwners = debitCards.stream().filter((debitCard) -> Objects.equals(debitCard.getId(), idAccount)).collect(Collectors.toList());
+        List<DebitCard> cardOwners = debitCards.stream().filter((debitCard) -> Objects.equals(debitCard.getId(), idDebitCard)).collect(Collectors.toList());
 
         if (cardOwners.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -147,20 +156,21 @@ public class DebitCardController {
         card.getBankAccount().setMovementQuant(card.getBankAccount().getMovementQuant() + 1);
 
 
-        // registro de movimiento
+        // Save History
         AccountTransaction accountTransaction = new AccountTransaction();
         accountTransaction.setConcept(transaction == 1 ? "Deposit" : "Withdrawal");
         accountTransaction.setAmount(quantity);
         accountTransaction.setDate(new Date());
         accountTransaction.setBankAccount(card.getBankAccount());
 
-        debitCardService.create(card);
+        debitCardService.save(card);
         accountTransactionService.save(accountTransaction);
 
         return ResponseEntity.ok(card);
 
     }
 
+    // Get History of a Debit Card
     @GetMapping("/history/debit-card/{idDebitCard}")
     public ResponseEntity<List<AccountTransaction>> history(@PathVariable Long idDebitCard) {
         DebitCard debitCard = this.debitCardService.findOneById(idDebitCard);

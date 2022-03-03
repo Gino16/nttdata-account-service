@@ -10,9 +10,8 @@ public interface BankAccountService {
 
     public BankAccount findOneById(Long id);
 
-    public BankAccount create(BankAccount creditCard);
+    public BankAccount save(BankAccount creditCard);
 
-    public BankAccount edit(Long id, BankAccount creditCard);
 
     public void delete(Long id);
 

@@ -22,10 +22,13 @@ public class BankAccount {
 
     private Double commission;
 
+    @Column(name = "current_balance")
     private Double currentBalance;
 
+    @Column(name = "movement_quantity")
     private Integer movementQuant;
 
+    @Column(name = "movement_limit")
     private Integer movementLimit;
 
     @ManyToOne(fetch = FetchType.LAZY)

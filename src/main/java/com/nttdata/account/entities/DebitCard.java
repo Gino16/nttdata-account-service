@@ -26,6 +26,7 @@ public class DebitCard {
     @JsonIgnoreProperties(value = {"applications", "hibernateLazyInitializer"})
     private BankAccount bankAccount;
 
+    @Transient
     private Long idCustomer;
 
     @Transient

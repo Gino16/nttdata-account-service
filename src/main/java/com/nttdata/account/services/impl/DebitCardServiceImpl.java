@@ -50,7 +50,7 @@ public class DebitCardServiceImpl implements DebitCardService {
     }
 
     @Override
-    public DebitCard create(DebitCard debitCard) {
+    public DebitCard save(DebitCard debitCard) {
         Customer customer = customerRepository.findOneById(debitCard.getIdCustomer());
         if (customer == null){
             return null;

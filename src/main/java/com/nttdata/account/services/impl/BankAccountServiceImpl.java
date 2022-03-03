@@ -13,41 +13,35 @@ import java.util.List;
 public class BankAccountServiceImpl implements BankAccountService {
 
     @Autowired
-    private BankAccountRepository repository;
+    private BankAccountRepository bankAccountRepository;
 
     @Override
     public List<BankAccount> findAll() {
-        return repository.findAll();
+        return bankAccountRepository.findAll();
     }
 
     @Override
     public BankAccount findOneById(Long id) {
-        return repository.findById(id).orElse(null);
+        return bankAccountRepository.findById(id).orElse(null);
     }
 
     @Override
-    public BankAccount create(BankAccount bankAccount) {
-        return repository.save(bankAccount);
-    }
-
-    @Override
-    public BankAccount edit(Long id, BankAccount bankAccount) {
-        BankAccount newBankAccount = this.findOneById(id);
-        return newBankAccount;
+    public BankAccount save(BankAccount bankAccount) {
+        return bankAccountRepository.save(bankAccount);
     }
 
     @Override
     public void delete(Long id) {
-        repository.deleteById(id);
+        bankAccountRepository.deleteById(id);
     }
 
     @Override
     public List<AccountType> findAllAccountTypes() {
-        return repository.listAccountType();
+        return bankAccountRepository.listAccountType();
     }
 
     @Override
     public AccountType searchAccountTypeById(Long id) {
-        return repository.searchAccountTypeById(id);
+        return bankAccountRepository.searchAccountTypeById(id);
     }
 }

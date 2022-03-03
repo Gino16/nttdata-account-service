@@ -15,7 +15,7 @@ public interface DebitCardService {
 
     public DebitCard findOneById(Long id);
 
-    public DebitCard create(DebitCard debitCard);
+    public DebitCard save(DebitCard debitCard);
 
     public DebitCard edit(Long id, DebitCard debitCard);
 
