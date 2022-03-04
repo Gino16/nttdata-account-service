@@ -22,6 +22,7 @@ public class DebitCard {
 
     private String number;
 
+    @JoinColumn(unique = true)
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnoreProperties(value = {"applications", "hibernateLazyInitializer"})
     private BankAccount bankAccount;

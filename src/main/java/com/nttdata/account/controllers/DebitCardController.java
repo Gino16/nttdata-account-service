@@ -51,50 +51,54 @@ public class DebitCardController {
     @PostMapping("/")
     public ResponseEntity<DebitCard> create(@RequestBody DebitCard debitCard) {
 
-        Customer customer = debitCardService.findCustomerById(debitCard.getIdCustomer());
-        BankAccount bankAccount = bankAccountService.findOneById(debitCard.getBankAccount().getId());
+        try {
+            Customer customer = debitCardService.findCustomerById(debitCard.getIdCustomer());
+            BankAccount bankAccount = bankAccountService.findOneById(debitCard.getBankAccount().getId());
 
-        if (customer == null || bankAccount == null) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        List<DebitCard> cards = debitCardService.findAllByIdCustomer(customer.getId());
-
-        // Validate if debit card is EMPRESARIAL or PERSONAL
-        if (Objects.equals(customer.getCustomerType().getName(), "Empresarial")) {
-            if (!Objects.equals(bankAccount.getAccountType().getName(), "cuenta corriente")) {
+            if (customer == null || bankAccount == null) {
                 return ResponseEntity.badRequest().build();
             }
-        } else if (Objects.equals(customer.getCustomerType().getName(), "Personal")) {
-            // Validate if exist PERSONAL debit cards
-            if (!cards.isEmpty()) {
-                AtomicInteger quantSavingAccounts = new AtomicInteger();
-                AtomicInteger quantCurrentAndFixedTermAccount = new AtomicInteger();
-                cards.forEach((card) -> {
-                    if (Objects.equals(card.getBankAccount().getAccountType().getName(), "ahorro")) {
-                        quantSavingAccounts.getAndIncrement();
-                    } else {
-                        quantCurrentAndFixedTermAccount.getAndIncrement();
+
+            List<DebitCard> cards = debitCardService.findAllByIdCustomer(customer.getId());
+
+            // Validate if debit card is EMPRESARIAL or PERSONAL
+            if (Objects.equals(customer.getCustomerType().getName(), "Empresarial")) {
+                if (!Objects.equals(bankAccount.getAccountType().getName(), "cuenta corriente")) {
+                    return ResponseEntity.badRequest().build();
+                }
+            } else if (Objects.equals(customer.getCustomerType().getName(), "Personal")) {
+                // Validate if exist PERSONAL debit cards
+                if (!cards.isEmpty()) {
+                    AtomicInteger quantSavingAccounts = new AtomicInteger();
+                    AtomicInteger quantCurrentAndFixedTermAccount = new AtomicInteger();
+                    cards.forEach((card) -> {
+                        if (Objects.equals(card.getBankAccount().getAccountType().getName(), "ahorro")) {
+                            quantSavingAccounts.getAndIncrement();
+                        } else {
+                            quantCurrentAndFixedTermAccount.getAndIncrement();
+                        }
+                    });
+
+                    if (quantSavingAccounts.get() >= 1 && quantCurrentAndFixedTermAccount.get() >= 1) {
+                        return ResponseEntity.badRequest().build();
                     }
-                });
 
-                if (quantSavingAccounts.get() >= 1 && quantCurrentAndFixedTermAccount.get() >= 1) {
-                    return ResponseEntity.badRequest().build();
-                }
+                    if (Objects.equals(bankAccount.getAccountType().getName(), "ahorro") && quantSavingAccounts.get() >= 1) {
+                        return ResponseEntity.badRequest().build();
+                    }
 
-                if (Objects.equals(bankAccount.getAccountType().getName(), "ahorro") && quantSavingAccounts.get() >= 1) {
-                    return ResponseEntity.badRequest().build();
-                }
-
-                if (!Objects.equals(bankAccount.getAccountType().getName(), "ahorro") && quantCurrentAndFixedTermAccount.get() >= 1) {
-                    return ResponseEntity.badRequest().build();
+                    if (!Objects.equals(bankAccount.getAccountType().getName(), "ahorro") && quantCurrentAndFixedTermAccount.get() >= 1) {
+                        return ResponseEntity.badRequest().build();
+                    }
                 }
             }
+
+            DebitCard newDebitCard = debitCardService.save(debitCard);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(newDebitCard);
+        } catch (Exception e){
+            return ResponseEntity.badRequest().build();
         }
-
-        DebitCard newDebitCard = debitCardService.save(debitCard);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(newDebitCard);
     }
 
     // Update data of Debit Card
